@@ -13,7 +13,7 @@ def main() -> None:
     Press 'q' to quit.
     """
     
-    videoCapture = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    videoCapture = cv2.VideoCapture(0)
     
     if not videoCapture.isOpened():
         raise RuntimeError("Could not open webcam (index 0). Try different index: 1, 2, ...")
