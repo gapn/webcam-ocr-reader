@@ -15,11 +15,36 @@ Run it locally and you’ll see three windows:
 
 ---
 
+## ⌨️ Controls & Modes
+
+**Windows:**
+- `q` — Quit
+- `1` — Otsu (binary)
+- `2` — Otsu (binary inverse)
+- `3` — Adaptive Gaussian (binary)
+- `4` — Adaptive Gaussian (binary inverse)
+- `5` — Simple fixed threshold (uses the current threshold value)
+
+**Live tuning:**
+- `[` / `]` — Decrease/Increase fixed threshold (only used in Mode 5)
+- `c` — Toggle CLAHE (local contrast equalization)
+- `m` — Toggle morphology (dilation) to thicken thin digits
+
+### Recommended starting point (LCD panels)
+1. Try **Mode 5 (Simple)** and tap `]` a few times until digits pop.
+2. If the background is uneven or there’s glare, toggle **`c`** (CLAHE) on.
+3. If digits look thin/broken, toggle **`m`** to dilate strokes slightly.
+4. If lighting is very uneven, try **Mode 3/4 (Adaptive)** and play with CLAHE/morphology.
+
+> Tip: Adjust the ROI (`ROI_X`, `ROI_Y`, `ROI_W`, `ROI_H`) so it tightly bounds the digits to reduce background noise.
+
+---
+
 ## ✨ Features
 
 * [x] **Live Webcam Feed:** Opens your default camera and displays frames in real time.
-* [ ] **Configurable ROI:** Tweak `ROI_X`, `ROI_Y`, `ROI_W`, `ROI_H` to focus on the text area.
-* [ ] **Realtime Preprocessing:** Grayscale + Gaussian blur + Otsu threshold for cleaner OCR.
+* [x] **Configurable ROI:** Tweak `ROI_X`, `ROI_Y`, `ROI_W`, `ROI_H` to focus on the text area.
+* [x] **Realtime Preprocessing:** Grayscale + Gaussian blur + Otsu threshold for cleaner OCR.
 * [ ] **OCR Integration:** Use `pytesseract` to extract text from the preprocessed ROI and show it live.
 * [ ] **ROI UX:** Move/resize ROI with keyboard and mouse; save/load ROI presets.
 * [ ] **FPS & Status Overlay:** Show frame rate and simple diagnostics on the live window.
