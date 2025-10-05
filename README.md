@@ -19,6 +19,7 @@ Run it locally and you’ll see three windows:
 
 **Windows:**
 - `q` — Quit
+- `s` — Select a Region of Interest (ROI) with the mouse
 - `1` — Otsu (binary)
 - `2` — Otsu (binary inverse)
 - `3` — Adaptive Gaussian (binary)
@@ -29,14 +30,15 @@ Run it locally and you’ll see three windows:
 - `[` / `]` — Decrease/Increase fixed threshold (only used in Mode 5)
 - `c` — Toggle CLAHE (local contrast equalization)
 - `m` — Toggle morphology (dilation) to thicken thin digits
+- `p` — Cycle Tesseract Page Segmentation Mode (PSM)
+- `+/-` — Increase/Decrease processing scale (resolution)
 
-### Recommended starting point (LCD panels)
-1. Try **Mode 5 (Simple)** and tap `]` a few times until digits pop.
-2. If the background is uneven or there’s glare, toggle **`c`** (CLAHE) on.
-3. If digits look thin/broken, toggle **`m`** to dilate strokes slightly.
-4. If lighting is very uneven, try **Mode 3/4 (Adaptive)** and play with CLAHE/morphology.
 
-> Tip: Adjust the ROI (`ROI_X`, `ROI_Y`, `ROI_W`, `ROI_H`) so it tightly bounds the digits to reduce background noise.
+### Recommended Tuning Workflow
+1. Run the script and press `s` to draw a tight box around *only* the numbers.
+2. Adjust the physical camera **focus** until the "Webcam OCR- ROI" window is perfectly sharp.
+3. Use `+/-` to adjust the **Scale**. This is the most important setting.
+4. Cycle through **Modes** `1-5` and toggle `c` (CLAHE) to find the cleanest black/white image in the "Preprocessed ROI" window
 
 ---
 
@@ -45,19 +47,20 @@ Run it locally and you’ll see three windows:
 * [x] **Live Webcam Feed:** Opens your default camera and displays frames in real time.
 * [x] **Configurable ROI:** Tweak `ROI_X`, `ROI_Y`, `ROI_W`, `ROI_H` to focus on the text area.
 * [x] **Realtime Preprocessing:** Grayscale + Gaussian blur + Otsu threshold for cleaner OCR.
-* [ ] **OCR Integration:** Use `pytesseract` to extract text from the preprocessed ROI and show it live.
-* [ ] **ROI UX:** Move/resize ROI with keyboard and mouse; save/load ROI presets.
-* [ ] **FPS & Status Overlay:** Show frame rate and simple diagnostics on the live window.
+* [x] **OCR Integration:** Use `pytesseract` to extract text from the preprocessed ROI and show it live.
+* [x] **ROI UX:** Move/resize ROI with keyboard and mouse; save/load ROI presets.
+* [x] **FPS & Status Overlay:** Show frame rate and simple diagnostics on the live window.
 
 ---
 
 ## 🗺️ Roadmap / Future Ideas
 
-* [ ] **Adaptive Threshold or CLAHE** for tricky lighting.
-* [ ] **Morphology / Denoise / Deskew** for small fonts or screens.
+* [x] **Adaptive Threshold or CLAHE** for tricky lighting.
+* [x] **Morphology / Denoise / Deskew** for small fonts or screens.
 * [ ] **Multi‑ROI** capture and per‑ROI OCR.
-* [ ] **Hotkeys:** arrow keys to nudge ROI, `+/-` to resize, `s` to save config.
+* [x] **Hotkeys:** arrow keys to nudge ROI, `+/-` to resize, `s` to save config.
 * [ ] **Simple UI** (Tkinter/PySide) for non‑technical use.
+* [ ] **Auto-Calibration Mode** to automatically find the best settings.
 
 ---
 
@@ -66,6 +69,7 @@ Run it locally and you’ll see three windows:
 * **Python 3.10+**
 * **OpenCV (cv2)** – video input, drawing, preprocessing
 * **Tesseract OCR** (optional in Phase 3) + **pytesseract**
+* **NumPy**
 * **Windows 10/11** focused tips (works cross‑platform with minor tweaks)
 
 ---
@@ -98,14 +102,9 @@ pip install opencv-python pytesseract
 ```bash
 python main.py
 ```
-- **`q`** quits.
+- Press **`s`** in the application window to select region to read.
+- Press **`q`** to quit.
 - Tweak the ROI constants at the top of `main.py`:
-  ```python
-  ROI_X = 100  # px from left
-  ROI_Y = 100  # px from top
-  ROI_W = 100  # width in px
-  ROI_H = 100  # height in px
-  ```
 
 ---
 
@@ -116,15 +115,6 @@ python main.py
 - **Backends & indices:** Try `cv2.CAP_MSMF`, `cv2.CAP_DSHOW`, or `cv2.CAP_ANY`, and indices `0/1/2`. Some cams sit on non‑zero indices.
 - **OBS Virtual Camera:** Click **Start Virtual Camera** in OBS if you want that feed.
 - **USB tips:** Try another USB port/cable; check Device Manager.
-
----
-
-## 🔑 Keyboard (planned)
-
-- `q` → Quit
-- (Planned) Arrow keys → nudge ROI
-- (Planned) +/- → resize ROI
-- (Planned) s → save ROI config
 
 ---
 
