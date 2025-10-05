@@ -48,6 +48,7 @@ def main() -> None:
     mode = 3
     simpleThreshold = 100
     scale = 2.5
+    psm = 7
     useLocalContrastEqualization = True
     useMorphologyToggle = False
     
@@ -133,22 +134,35 @@ def main() -> None:
             if now - lastOcrTime >= ocrIntervalSeconds:
                 try:
                     ocr_img = preprocessed
+                    if ocr_img is None:
+                        continue
                     
                     if ocr_img.mean() < 127:
                         ocr_img = cv2.bitwise_not(ocr_img)
                         
-                    ocr_img = cv2.morphologyEx(ocr_img, cv2.MORPH_OPEN, numpy.ones((2,2), numpy.uint8), iterations=1)
-                    ocr_img = cv2.morphologyEx(ocr_img, cv2.MORPH_CLOSE, numpy.ones((2,2), numpy.uint8), iterations=1)
+                    baseConfiguration = r'--oem 1 -c tessedit_char_whitelist=0123456789.-, -c load_system_dawg=0 -c load_freq_dawg=0'
                     
-                    text = pytesseract.image_to_string(ocr_img, config=tesseractConfig).strip()
+                    configurations = [
+                        f'--psm {psm} {baseConfiguration}',
+                        f'--psm 7 {baseConfiguration}', #default
+                        f'--psm 8 {baseConfiguration}', #single word
+                        f'--psm 13 {baseConfiguration}', #raw line
+                    ]
+
+                    bestText = ""
+                    for configuration in configurations:
+                        text = pytesseract.image_to_string(ocr_img, config=configuration).strip()
+                        if len(text) > len(bestText):
+                            bestText = text
                     
-                    print("OCR raw    :", repr(text))
+                    print("OCR raw    :", repr(bestText))
                     
-                    cleaned_text = extract_number(text)
+                    cleaned_text = extract_number(bestText)
                     print("OCR clean  :", repr(cleaned_text))
 
                     if cleaned_text:
                         lastOcrText = cleaned_text
+                        
                 except Exception as e:
                     lastOcrText = f"[OCR error: {e}]"
                     print(lastOcrText)
@@ -223,6 +237,11 @@ def main() -> None:
         elif keyPress in (ord('-'), ord('_')):
             scale = max(1.0, scale - 0.5)
             print(f"Scale set to: {scale}")
+        elif keyPress == ord('p'):
+            psms = [7, 8, 13, 6] # Common PSM modes for this task
+            current_index = psms.index(psm) if psm in psms else 0
+            psm = psms[(current_index + 1) % len(psms)]
+            print(f"PSM set to: {psm}")
         
     videoCapture.release()
     cv2.destroyAllWindows()
