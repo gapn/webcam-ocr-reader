@@ -1,11 +1,26 @@
 import cv2
 import numpy
+import time
+import pytesseract
+pytesseract.pytesseract.tesseract_cmd = r"C:\Users\Grega\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
+
+def draw_label(img, text, org, font=cv2.FONT_HERSHEY_SIMPLEX, scale=0.9, color=(0, 255, 255), thick=2):
+    """
+    Draws a high-contrast label: a filled black rectangle with the text on top.
+    """
+    (tw, th), base = cv2.getTextSize(text, font, scale, thick)
+    x, y = org
+    # background rectangle (padding 6 px)
+    cv2.rectangle(img, (x - 6, y - th - 6), (x + tw + 6, y + base + 6), (0, 0, 0), -1)
+    # the text itself
+    cv2.putText(img, text, (x, y), font, scale, color, thick, cv2.LINE_AA)
+
 # Define region of interest (ROI)
 
-ROI_X = 10 #left edge = px from left
-ROI_Y = 10 #top edge = px from top
-ROI_W = 300 #rect width in px
-ROI_H = 300 #rect height in px
+ROI_X = 300 #left edge = px from left
+ROI_Y = 70 #top edge = px from top
+ROI_W = 200 #rect width in px
+ROI_H = 60 #rect height in px
 
 def main() -> None:
     """
@@ -25,6 +40,15 @@ def main() -> None:
     useMorphologyToggle = False
     
     localContrastEqualization = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    
+    # OCR and FPS controls
+    ocrIntervalSeconds = 0.2
+    lastOcrTime = 0.0
+    lastOcrText = ""
+    tesseractConfig = r"--oem 1 --psm 7 -c tessedit_char_whitelist=0123456789.-, -c load_system_dawg=0 -c load_freq_dawg=0"
+    fps = 0.0
+    frameCount = 0
+    fpsTimer = time.time()
     
     while True:
         frameRead, frame = videoCapture.read()
@@ -59,7 +83,7 @@ def main() -> None:
         else:
             grayForThreshold = convertRoiToGrey
         
-        addBlurToRoi = cv2.GaussianBlur(grayForThreshold, (5, 5), 0) #if text very noisy, change 5,5 to 7,7
+        addBlurToRoi = cv2.GaussianBlur(grayForThreshold, (5, 5), 0)
         
         #Thresholding modes
         if mode == 1:
@@ -88,7 +112,60 @@ def main() -> None:
         if useMorphologyToggle:
             kernel = numpy.ones((3, 3), numpy.uint8)
             preprocessed = cv2.dilate(preprocessed, kernel, iterations=1)
+            
+        now = time.time()
+        if now - lastOcrTime >= ocrIntervalSeconds:
+            try:
+                ocr_img = preprocessed
+                
+                if ocr_img.mean() < 127:
+                    ocr_img = cv2.bitwise_not(ocr_img)
+                    
+                ocr_img = cv2.morphologyEx(ocr_img, cv2.MORPH_OPEN, numpy.ones((2,2), numpy.uint8), iterations=1)
+                ocr_img = cv2.morphologyEx(ocr_img, cv2.MORPH_CLOSE, numpy.ones((2,2), numpy.uint8), iterations=1)
+
+                ocr_img = cv2.resize(ocr_img, None, fx=2.5, fy=2.5, interpolation=cv2.INTER_LINEAR)
+                
+                text = pytesseract.image_to_string(ocr_img, config=tesseractConfig).strip()
+                
+                print("OCR raw   :", repr(text))
+                
+                if text:
+                    lastOcrText = text
+            except Exception as e:
+                lastOcrText = f"[OCR error: {e}]"
+                print(lastOcrText)
+                
+            lastOcrTime = now
+            
+            pre_disp = preprocessed.copy()
+            # If single-channel, convert to BGR so colored label works
+            if len(pre_disp.shape) == 2:
+                pre_disp = cv2.cvtColor(pre_disp, cv2.COLOR_GRAY2BGR)
+            draw_label(pre_disp, f"OCR: {lastOcrText or '(empty)'}", (10, 28))
+            cv2.imshow("Webcam OCR - Preprocessed ROI", pre_disp)
+            
+            #print("OCR raw   :", repr(text))  # show hidden chars like \n
+            #print("OCR clean :", repr(lastOcrText))
         
+        frameCount += 1
+        elapsed = now - fpsTimer
+        if elapsed >= 1.0:
+            fps = frameCount / elapsed
+            frameCount = 0
+            fpsTimer = now
+        
+        hud = (
+            f"Mode:{mode} "
+            f"Thr:{simpleThreshold if mode==5 else '-'} "
+            f"CLAHE:{'on' if useLocalContrastEqualization else 'off'} "
+            f"Morph:{'on' if useMorphologyToggle else 'off'} "
+            f"FPS:{fps:.1f}"
+        )
+        draw_label(frame, hud, (10, 28), scale=0.65, color=(50, 220, 50), thick=2)
+
+        draw_label(frame, f"OCR: {lastOcrText or '(empty)'}", (x1, max(30, y1 - 10)))
+
         # Video views
         
         cv2.imshow("Webcam OCR - Live", frame)
@@ -122,5 +199,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-        
-        
