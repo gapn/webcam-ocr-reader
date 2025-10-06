@@ -1,6 +1,6 @@
 # 🎥 Webcam OCR Reader
 
-A step‑by‑step **Python + OpenCV** project that shows a live webcam feed, highlights a configurable **ROI (Region of Interest)**, preprocesses it in real time (grayscale → blur → threshold), and then pipes it to **Tesseract OCR**.
+A step‑by‑step **Python + OpenCV** project that shows a live webcam feed, highlights an interactive **ROI (Region of Interest)**, preprocesses it in real time using an advanced "scale-first" pipeline (**scale → denoise → sharpen → threshold**), and then pipes it to **Tesseract OCR**.
 
 ---
 
@@ -17,9 +17,12 @@ Run it locally and you’ll see three windows:
 
 ## ⌨️ Controls & Modes
 
-**Windows:**
+**Main Interaction**
+- `w` — Start/Stop writing OCR results to Excel file
 - `q` — Quit
 - `s` — Select a Region of Interest (ROI) with the mouse
+
+**Thresholding Modes:**
 - `1` — Otsu (binary)
 - `2` — Otsu (binary inverse)
 - `3` — Adaptive Gaussian (binary)
@@ -31,12 +34,14 @@ Run it locally and you’ll see three windows:
 - `c` — Toggle CLAHE (local contrast equalization)
 - `m` — Toggle morphology (dilation) to thicken thin digits
 - `p` — Cycle Tesseract Page Segmentation Mode (PSM)
-- `+/-` — Increase/Decrease processing scale (resolution)
+- `+ / -` — Increase/Decrease processing scale (resolution)
+- `, / .` — Decrease/Increase save interval
 
+---
 
 ### Recommended Tuning Workflow
 1. Run the script and press `s` to draw a tight box around *only* the numbers.
-2. Adjust the physical camera **focus** until the "Webcam OCR- ROI" window is perfectly sharp.
+2. Adjust the physical camera **focus** until the "Webcam OCR - ROI" window is perfectly sharp.
 3. Use `+/-` to adjust the **Scale**. This is the most important setting.
 4. Cycle through **Modes** `1-5` and toggle `c` (CLAHE) to find the cleanest black/white image in the "Preprocessed ROI" window
 
@@ -45,11 +50,11 @@ Run it locally and you’ll see three windows:
 ## ✨ Features
 
 * [x] **Live Webcam Feed:** Opens your default camera and displays frames in real time.
-* [x] **Configurable ROI:** Tweak `ROI_X`, `ROI_Y`, `ROI_W`, `ROI_H` to focus on the text area.
-* [x] **Realtime Preprocessing:** Grayscale + Gaussian blur + Otsu threshold for cleaner OCR.
-* [x] **OCR Integration:** Use `pytesseract` to extract text from the preprocessed ROI and show it live.
-* [x] **ROI UX:** Move/resize ROI with keyboard and mouse; save/load ROI presets.
-* [x] **FPS & Status Overlay:** Show frame rate and simple diagnostics on the live window.
+* [x] **Interactive ROI:** Press `s` to select a new Region of Interest with the mouse.
+* [x] **Advanced Realtime Preprocessing:** A full "scale-first" pipeline including denoising, sharpening, CLAHE, and edge enhancement.
+* [x] **Robust OCR Integration:** Uses a multi-configuration `pytesseract` loop to extract text and a regex function to clean the result.
+* [x] **Data Logging:** Saves OCR readings with timestamps to an Excel (`.xlsx`) file at a user-configurable interval.
+* [x] **Live Tuning & Status Overlay:** Hotkeys to change all major parameters in real-time, with a clean HUD showing the current status.
 
 ---
 
@@ -58,7 +63,7 @@ Run it locally and you’ll see three windows:
 * [x] **Adaptive Threshold or CLAHE** for tricky lighting.
 * [x] **Morphology / Denoise / Deskew** for small fonts or screens.
 * [ ] **Multi‑ROI** capture and per‑ROI OCR.
-* [x] **Hotkeys:** arrow keys to nudge ROI, `+/-` to resize, `s` to save config.
+* [x] **Hotkeys:** `s` to select ROI, `+/-` to adjust scale.
 * [ ] **Simple UI** (Tkinter/PySide) for non‑technical use.
 * [ ] **Auto-Calibration Mode** to automatically find the best settings.
 
@@ -68,8 +73,9 @@ Run it locally and you’ll see three windows:
 
 * **Python 3.10+**
 * **OpenCV (cv2)** – video input, drawing, preprocessing
-* **Tesseract OCR** (optional in Phase 3) + **pytesseract**
+* **Tesseract OCR** + **pytesseract**
 * **NumPy**
+* **OpenPyXl** - for writing to Excel files
 * **Windows 10/11** focused tips (works cross‑platform with minor tweaks)
 
 ---
@@ -87,11 +93,11 @@ venv\Scripts\activate.bat
 
 ### 2) Install dependencies
 ```bash
-pip install opencv-python pytesseract
+pip install opencv-python pytesseract numpy openpyxl
 ```
 > If you accidentally installed `opencv-python-headless`, uninstall it and keep `opencv-python` (the GUI/video I/O‑capable wheel).
 
-### 3) (Windows) Install Tesseract (for Phase 3)
+### 3) (Windows) Install Tesseract
 - Download and install **Tesseract** (adds `tesseract.exe` to your PATH).
 - Verify via: `tesseract --version`
 
@@ -103,8 +109,8 @@ pip install opencv-python pytesseract
 python main.py
 ```
 - Press **`s`** in the application window to select region to read.
+- Press **`w`** to start/stop saving data to Excel file.
 - Press **`q`** to quit.
-- Tweak the ROI constants at the top of `main.py`:
 
 ---
 
