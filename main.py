@@ -3,6 +3,9 @@ import numpy
 import time
 import pytesseract
 import re
+import os
+from datetime import datetime
+from openpyxl import Workbook, load_workbook
 
 def drawLabel(img, text, org, font=cv2.FONT_HERSHEY_SIMPLEX, scale=0.9, color=(0, 255, 255), thick=2):
     """
@@ -109,7 +112,7 @@ def performOcr(image, psm, extractNumberFunction):
     cleanedOcrText = extractNumber(bestOcrText)
     return cleanedOcrText, bestOcrText
 
-def handleInput(keyPressed, frame, roiCoordinates, mode, simpleThreshold, scale, psm, isClaheEnabled, isMorphologyEnabled):
+def handleInput(keyPressed, frame, roiCoordinates, mode, simpleThreshold, scale, psm, isClaheEnabled, isMorphologyEnabled, isSaving, saveInterval):
     """
     Handles all keyboard inputs and returns the updated state.
     """
@@ -151,9 +154,18 @@ def handleInput(keyPressed, frame, roiCoordinates, mode, simpleThreshold, scale,
         current_index = psms.index(psm) if psm in psms else 0
         psm = psms[(current_index + 1) % len(psms)]
         print(f"PSM set to: {psm}")
-    return shouldQuit, roiCoordinates, mode, simpleThreshold, scale, psm, isClaheEnabled, isMorphologyEnabled
+    elif keyPressed == ord('w'):
+        isSaving = not isSaving
+        print(f"Saving toggled {'ON' if isSaving else 'OFF'}")
+    elif keyPressed == ord(','):
+        saveInterval = max(0.5, saveInterval - 0.5)
+        print(f"Save interval set to: {saveInterval}s")
+    elif keyPressed == ord('.'):
+        saveInterval = min(3600.0, saveInterval + 0.5)
+        print(f"Save interval set to: {saveInterval}s")
+    return shouldQuit, roiCoordinates, mode, simpleThreshold, scale, psm, isClaheEnabled, isMorphologyEnabled, isSaving, saveInterval
 
-def drawOverlays(frame, roiCoordinates, roiCropped, binaryImage, lastOcrText, mode, psm, simpleThreshold, isClaheEnabled, isMorphologyEnabled, fps):
+def drawOverlays(frame, roiCoordinates, roiCropped, binaryImage, lastOcrText, mode, psm, simpleThreshold, isClaheEnabled, isMorphologyEnabled, fps, isSaving, saveInterval):
     """
     Draws all the text and rectangles on the main frame.
     """
@@ -173,18 +185,51 @@ def drawOverlays(frame, roiCoordinates, roiCropped, binaryImage, lastOcrText, mo
             
     else:
         drawLabel(frame, "Press 'S' to select an ROI", (50, frameHeight - 60), scale=0.5)
-        
+    
+    saveStatus = f"SAVING ({saveInterval}s)" if isSaving else "IDLE"
+    saveColor = (0, 255, 255) if isSaving else (50, 220, 50)
+    
     hud = (
         f"Mode:{mode} "
         f"PSM: {psm} "
         f"Thr:{simpleThreshold if mode==5 else '-'} "
         f"CLAHE:{'on' if isClaheEnabled else 'off'} "
         f"Morph:{'on' if isMorphologyEnabled else 'off'} "
-        f"FPS:{fps:.1f}"
+        f"FPS:{fps:.1f} | {saveStatus}"
     )
     
-    drawLabel(frame, hud, (10, frameHeight - 20), scale=0.65, color=(50, 220, 50), thick=2)
+    drawLabel(frame, hud, (10, frameHeight - 20), scale=0.5, color=saveColor, thick=2)
     
+def initExcel(filename="measurements.xlsx"):
+    """
+    Creates the Excel file with a header row if it doesn't exist.
+    """
+    if not os.path.exists(filename):
+        print(f"Creating new Excel file: {filename}")
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "Data"
+        sheet.append(["Timestamp", "Value"])
+        workbook.save(filename)
+
+def writeToExcel(value, filename="measurements.xlsx"):
+    """
+    Appends a timestamp and a value to the specified Excel file.
+    """
+    try:
+        workbook = load_workbook(filename)
+        sheet = workbook.active
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        sheet.append([timestamp, float(value)])
+        workbook.save(filename)
+        print(f"✓ Saved: {timestamp}, {value}")
+        return True
+    except PermissionError:
+        print(f"⚠️ ERROR: Could not save to Excel. Is '{filename}' open?")
+        return False
+    except Exception as e:
+        print(f"⚠️ An error occurred while writing to Excel: {e}")
+        return False
 
 def main() -> None:
     """
@@ -199,6 +244,8 @@ def main() -> None:
     """
     
     videoCapture = cv2.VideoCapture(0)
+
+    initExcel()
     
     roiCoordinates = None
     
@@ -212,14 +259,16 @@ def main() -> None:
     psm = 7
     isClaheEnabled = True
     isMorphologyEnabled = False
+    isSaving = False
+    saveInterval = 5.0
     
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     
     # OCR and FPS controls
     ocrIntervalSeconds = 0.2
     lastOcrTime = 0.0
+    lastSaveTime = 0.0
     lastOcrText = ""
-    tesseractConfig = r"--oem 1 --psm 7 -c tessedit_char_whitelist=0123456789.-, -c load_system_dawg=0 -c load_freq_dawg=0"
     fps = 0.0
     frameCount = 0
     fpsTimer = time.time()
@@ -245,13 +294,17 @@ def main() -> None:
             if binaryImage is not None and (now - lastOcrTime >= ocrIntervalSeconds):
                 newOcrText, rawOcrText = performOcr(binaryImage, psm, extractNumber)
                 
-                print("OCR raw    :", repr(rawOcrText))
-                print("OCR clean  :", repr(newOcrText))
+                #print("OCR raw    :", repr(rawOcrText))
+                #print("OCR clean  :", repr(newOcrText))
 
                 if newOcrText:
                     lastOcrText = newOcrText
                     
                 lastOcrTime = now
+            
+            if isSaving and lastOcrText and (now - lastSaveTime) >= saveInterval:
+                if writeToExcel(lastOcrText):
+                    lastSaveTime = now
         
         frameCount += 1
         elapsed = now - fpsTimer
@@ -260,16 +313,17 @@ def main() -> None:
             frameCount = 0
             fpsTimer = now
             
-        drawOverlays(frame, roiCoordinates, roiCropped, binaryImage, lastOcrText, mode, psm, simpleThreshold, isClaheEnabled, isMorphologyEnabled, fps)
+        drawOverlays(frame, roiCoordinates, roiCropped, binaryImage, lastOcrText, mode, psm, simpleThreshold, isClaheEnabled, isMorphologyEnabled, fps, isSaving, saveInterval)
 
         cv2.imshow("Webcam OCR - Live", frame)
         
         keyPressed = cv2.waitKey(1) & 0xFF
-        shouldQuit, roiCoordinates, mode, simpleThreshold, scale, psm, isClaheEnabled, isMorphologyEnabled = handleInput(
-            keyPressed, frame, roiCoordinates, mode, simpleThreshold, scale, psm, isClaheEnabled, isMorphologyEnabled
+        shouldQuit, roiCoordinates, mode, simpleThreshold, scale, psm, isClaheEnabled, isMorphologyEnabled, isSaving, saveInterval = handleInput(
+            keyPressed, frame, roiCoordinates, mode, simpleThreshold, scale, psm, isClaheEnabled, isMorphologyEnabled, isSaving, saveInterval
         )
         if shouldQuit:
             break
+        
     print("Closing application...")
     videoCapture.release()
     cv2.destroyAllWindows()
