@@ -4,8 +4,14 @@ import time
 import pytesseract
 import re
 import os
+import sys
 from datetime import datetime
 from openpyxl import Workbook, load_workbook
+
+if getattr(sys, 'frozen', False):
+    tesseract_path = os.path.join(sys._MEIPASS, 'Tesseract-OCR', 'tesseract.exe')
+    pytesseract.pytesseract.tesseract_cmd = tesseract_path
+
 
 def drawLabel(img, text, org, font=cv2.FONT_HERSHEY_SIMPLEX, scale=0.9, color=(0, 255, 255), thick=2):
     """
