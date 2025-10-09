@@ -114,6 +114,65 @@ python main.py
 
 ---
 
+## 📦 Creating a Distributable `.exe`
+
+This project uses **PyInstaller** to create a standalone Windows application. Due to an external dependency on Tesseract and potential packaging issues, the process requires a few specific steps.
+
+**Build Steps:**
+
+1.  **Install PyInstaller:**
+    ```bash
+    pip install pyinstaller
+    ```
+2.  **Prepare Tesseract Files:**
+    - Find your Tesseract installation folder (e.g., `C:\Program Files\Tesseract-OCR`).
+    - Copy the entire `Tesseract-OCR` folder and paste it into the root of this project directory, so it sits next to `main.py`.
+
+3.  **Generate the `.spec` File:** Generate a configuration file with the correct application name.
+    ```bash
+    pyinstaller --name WebcamOCR main.py
+    ```
+    - This will create a `WebcamOCR.spec` file in your project directory.
+
+4.  **Edit the `.spec` File:** Open `WebcamOCR.spec` and add the `datas` variable to the `Analysis` section to include the Tesseract folder.
+    ```python
+    a = Analysis(
+        ['main.py'],
+        ...,
+        datas=[('Tesseract-OCR', 'Tesseract-OCR')],  # <-- ADD THIS LINE
+        ...
+    )
+    ```
+5.  **Build the Application:** Run PyInstaller using the `.spec` file from a terminal with **Administrator privileges**.
+    ```bash
+    pyinstaller --clean WebcamOCR.spec
+    ```
+6.  **Final Manual Step:** After the build is complete, manually **copy** the `Tesseract-OCR` folder from your project root into the final build directory, which will be `dist/WebcamOCR`.
+
+The entire `dist/WebcamOCR` folder is now the complete, distributable application. You can zip it and share it.
+
+---
+
+## 🖥️ Using the Distributed Application
+
+For colleagues running the final `WebcamOCR.exe` on a new computer.
+
+### Prerequisites
+Before running the application for the first time, a required system component must be installed.
+
+-   **Microsoft Visual C++ Redistributable**: Download and install the "x64" version from the [official Microsoft website](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist).
+
+### Running the Application
+1.  Unzip the entire application folder (e.g., `WebcamOCR.zip`) to a location on your computer, like your folder for applications.
+2.  Open the `WebcamOCR` folder and double-click `WebcamOCR.exe` to run it.
+
+### Troubleshooting
+-   If the application closes immediately or the camera doesn't open, try right-clicking `WebcamOCR.exe` and selecting **"Run as administrator"**.
+-   Ensure no other applications (like Microsoft Teams, Zoom, etc.) are using the camera.
+-   The application needs permission to write files, so don't run it from a read-only location.
+
+---
+
 ## 🧯 Windows Camera Troubleshooting
 
 - **Privacy settings:** Settings → Privacy & security → **Camera** → enable both global camera access and **“Let desktop apps access your camera.”**
