@@ -53,12 +53,11 @@ def main() -> None:
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     
     # OCR and FPS controls
-    ocr_interval_seconds = config.OCR_INTERVAL_SECONDS
     lat_ocr_time = 0.0
     last_save_time = 0.0
-    last_ocr_text = ""
-    fps = 0.0
-    frame_count = 0
+    last_ocr_text = config.DEFAULT_LAST_OCR_TEXT
+    fps = config.DEFAULT_FPS
+    frame_count = config.DEFAULT_FRAME_COUNT
     fps_timer = time.time()
     
     while True:
@@ -79,7 +78,7 @@ def main() -> None:
                 roi_cropped, scale, is_clahe_enabled, clahe, mode, simple_threshold, is_morphology_enabled
             )
                 
-            if binary_image is not None and (now - lat_ocr_time >= ocr_interval_seconds):
+            if binary_image is not None and (now - lat_ocr_time >= config.OCR_INTERVAL_SECONDS):
                 new_ocr_text, raw_ocr_text = perform_ocr(binary_image, psm, extract_number)
 
                 if new_ocr_text:
