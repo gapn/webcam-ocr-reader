@@ -76,7 +76,7 @@ def main() -> None:
             roi_cropped = frame[y:y+h, x:x+w]
         
             binary_image = process_image(
-                roi_cropped, scale, is_clahe_enabled, clahe, mode, simple_threshold
+                roi_cropped, scale, is_clahe_enabled, clahe, mode, simple_threshold, is_morphology_enabled
             )
                 
             if binary_image is not None and (now - lat_ocr_time >= ocr_interval_seconds):

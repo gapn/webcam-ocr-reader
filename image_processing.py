@@ -2,7 +2,7 @@ import cv2
 import numpy
 
 
-def process_image(image, scale, is_clahe_enabled, clahe, mode, simple_threshold):
+def process_image(image, scale, is_clahe_enabled, clahe, mode, simple_threshold, is_morphology_enabled):
     """
     Applies the full 'scale-first' image processing pipeline to an image.
     """
@@ -50,5 +50,8 @@ def process_image(image, scale, is_clahe_enabled, clahe, mode, simple_threshold)
     else:
         _, binary_image = cv2.threshold(enhanced_image, simple_threshold, 255, cv2.THRESH_BINARY)
         
+    if is_morphology_enabled: 
+        kernel = numpy.ones((3, 3), numpy.uint8)
+        binary_image = cv2.dilate(binary_image, kernel, iterations=1)
     return binary_image
 
