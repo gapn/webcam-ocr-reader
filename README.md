@@ -71,35 +71,48 @@ Run it locally and you’ll see three windows:
 
 ## 🛠️ Tech Stack
 
-* **Python 3.10+**
+* **Python 3.12**
 * **OpenCV (cv2)** – video input, drawing, preprocessing
 * **Tesseract OCR** + **pytesseract**
 * **NumPy**
 * **OpenPyXl** - for writing to Excel files
-* **Windows 10/11** focused tips (works cross‑platform with minor tweaks)
+* **Windows 10/11**
 
 ---
 
 ## 🧑‍💻 Getting Started
 
-### 1) Create & activate a virtual environment
+### 1) Prerequisites (Install first!)
+
+Before setting up the project, ensure you have the following installed on your system:
+* **Python 3.12:** This project is built and tested on **Python 3.12.10**. Newer versions (3.13+) are known to have compatibility issues (at the moment of creating this project).
+* **(Windows) Tesseract-OCR:**
+    * Download and install **Tesseract** from [official installers page](https://github.com/UB-Mannheim/tesseract/wiki).
+    * Ensure that installer adds `tesseract.exe` to your system's PATH, if not, add it manually.
+    * Verify via new terminal: `tesseract --version`
+
+### 2) Project Setup
+
+1. **Clone or download project, `cd` in the folder**
+
+2. **Create virtual environment using Python 3.12 executable:**
 ```bash
-python -m venv venv
+py -3.12 -m venv venv
+```
+
+3. **Activate virtual environment:**
+```
 # PowerShell
 .\venv\Scripts\Activate.ps1
 # cmd.exe
 venv\Scripts\activate.bat
 ```
 
-### 2) Install dependencies
+4. **Install dependencies**
 ```bash
-pip install opencv-python pytesseract numpy openpyxl
+pip install -r requirements.txt
 ```
 > If you accidentally installed `opencv-python-headless`, uninstall it and keep `opencv-python` (the GUI/video I/O‑capable wheel).
-
-### 3) (Windows) Install Tesseract
-- Download and install **Tesseract** (adds `tesseract.exe` to your PATH).
-- Verify via: `tesseract --version`
 
 ---
 
