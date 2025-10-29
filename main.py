@@ -79,7 +79,7 @@ def main() -> None:
             )
                 
             if binary_image is not None and (now - lat_ocr_time >= config.OCR_INTERVAL_SECONDS):
-                new_ocr_text, raw_ocr_text = perform_ocr(binary_image, psm, extract_number)
+                new_ocr_text, raw_ocr_text = perform_ocr(binary_image, psm)
 
                 if new_ocr_text:
                     last_ocr_text = new_ocr_text
