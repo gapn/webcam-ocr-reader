@@ -2,19 +2,19 @@ import cv2
 import numpy as np
 
 
-# Styling
+# --- Styling ---
 COLOR_BLACK = (0, 0, 0)
 COLOR_YELLOW = (0, 255, 255)
 COLOR_GREEN_BRIGHT = (0, 255, 0)
 COLOR_GREEN_MUTED = (50, 220, 50)
 
-# Label Drawing
+# --- Label Drawing ---
 LABEL_FONT = cv2.FONT_HERSHEY_SIMPLEX
 LABEL_BG_PADDING = 6
 LABEL_THICKNESS = 2
 LABEL_DEFAULT_SCALE = 0.9
 
-# HUD Positioning
+# --- HUD Positioning ---
 HUD_POS = (10, -20)
 HUD_SCALE = 0.5
 ROI_PROMPT_POS = (50, -60)
