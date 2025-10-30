@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
+
+from roi import ROI
 
 
 # --- Constants ---
@@ -24,12 +26,9 @@ SAVE_INTERVAL_STEP = 0.5
 SAVE_INTERVAL_MIN = 0.5
 SAVE_INTERVAL_MAX = 3600.0
 
-# --- Type Aliases ---
-ROI_Coordinates = Optional[Tuple[int, int, int, int]]
 
 HandleInputReturn = Tuple[
     bool,
-    ROI_Coordinates,
     int,
     int,
     float,
@@ -42,7 +41,7 @@ HandleInputReturn = Tuple[
 def handle_input(
     key_pressed: int,
     frame: np.ndarray,
-    roi_coordinates: ROI_Coordinates,
+    rois: List[ROI],
     mode: int,
     simple_threshold: int,
     scale: float,
@@ -59,7 +58,7 @@ def handle_input(
     Args:
         key_pressed (int): (0xFF & cv2.waitKey(1)) value.
         frame (np.ndarray): Current camera frame, needed for cv2.selectROI.
-        roi_coordinates (ROI_Coordinates): Current (x, y, w, h) or None.
+        rois (List[ROI]): List of current ROIs (will me modified)
         mode (int): Current thresholding mode.
         simple_threshold (int): Current simple threshold value.
         scale (float): Current image processing scale.
@@ -70,7 +69,7 @@ def handle_input(
         save_interval (float): Current save interval in seconds.
 
     Returns:
-        HandleInputReturn: Tuple containing new state.
+        HandleInputReturn: Tuple containing new state (minus ROI data).
     """
     should_quit = False
     
@@ -83,7 +82,21 @@ def handle_input(
             ROI_WINDOW_NAME, frame, fromCenter=False, showCrosshair=True
         )
         if selection[2] > 0 and selection[3] > 0:
-            roi_coordinates = selection
+            name = f"ROI {len(rois) + 1}"
+            new_roi = ROI(rect=selection, name=name)
+            rois.append(new_roi)
+            print(f"Added {name} at {selection}")
+    
+    elif key_pressed == ord("d"):
+        if rois:
+            removed = rois.pop()
+            print(f"Removed {removed.name}")
+        else:
+            print("No ROIs to delete")
+    
+    elif key_pressed == ord("x"):
+        rois.clear()
+        print("Cleared all ROIs")
 
     elif key_pressed == ord('1'):
         mode = 1
@@ -138,7 +151,6 @@ def handle_input(
 
     return (
         should_quit,
-        roi_coordinates,
         mode,
         simple_threshold,
         scale,
