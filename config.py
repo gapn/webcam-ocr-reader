@@ -26,3 +26,9 @@ DEFAULT_FPS = 0.0
 DEFAULT_FRAME_COUNT = 0
 DEFAULT_LAST_OCR_TEXT = ""
 
+
+# --- Video Capture Parameters ---
+CAMERA_INDEX = 1  # The index of your webcam (0, 1, 2, etc.)
+CLAHE_CLIP_LIMIT = 2.0
+CLAHE_TILE_GRID_SIZE = (8, 8)
+
